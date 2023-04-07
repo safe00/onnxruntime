@@ -332,6 +332,13 @@ if (onnxruntime_USE_CANN)
   list(APPEND onnxruntime_test_providers_src ${onnxruntime_test_providers_cann_src})
 endif()
 
+if (onnxruntime_USE_SHL)
+  file(GLOB_RECURSE onnxruntime_test_providers_shl_src CONFIGURE_DEPENDS
+    "${TEST_SRC_DIR}/providers/shl/*"
+    )
+  list(APPEND onnxruntime_test_providers_src ${onnxruntime_test_providers_shl_src})
+endif()
+
 if (onnxruntime_ENABLE_TRAINING_APIS)
   file(GLOB_RECURSE orttraining_test_trainingops_cpu_src CONFIGURE_DEPENDS
     "${ORTTRAINING_SOURCE_DIR}/test/training_ops/compare_provider_test_utils.cc"
@@ -508,6 +515,10 @@ if(onnxruntime_USE_ARMNN)
   list(APPEND onnxruntime_test_providers_dependencies onnxruntime_providers_armnn)
 endif()
 
+if(onnxruntime_USE_SHL)
+  list(APPEND onnxruntime_test_providers_dependencies onnxruntime_providers_shl)
+endif()
+
 if (onnxruntime_ENABLE_LANGUAGE_INTEROP_OPS)
   set(ONNXRUNTIME_INTEROP_TEST_LIBS PRIVATE onnxruntime_language_interop onnxruntime_pyop)
 endif()
@@ -527,6 +538,7 @@ set(ONNXRUNTIME_TEST_LIBS
     # ${PROVIDERS_TVM}
     ${PROVIDERS_XNNPACK}
     ${PROVIDERS_AZURE}
+    ${PROVIDERS_SHL}
     onnxruntime_optimizer
     onnxruntime_providers
     onnxruntime_util

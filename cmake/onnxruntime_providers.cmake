@@ -147,6 +147,9 @@ endif()
 if (onnxruntime_USE_CANN)
   set(PROVIDERS_CANN onnxruntime_providers_cann)
 endif()
+if (onnxruntime_USE_SHL)
+  set(PROVIDERS_SHL onnxruntime_providers_shl)
+endif()
 if (onnxruntime_USE_AZURE)
   set(PROVIDERS_AZURE onnxruntime_providers_azure)
 endif()
@@ -1609,6 +1612,37 @@ if (onnxruntime_USE_CANN)
           LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
           RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
+
+if (onnxruntime_USE_SHL)
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
+  file(GLOB_RECURSE onnxruntime_providers_shl_src CONFIGURE_DEPENDS
+    "${ONNXRUNTIME_ROOT}/core/providers/shl/*.h"
+    "${ONNXRUNTIME_ROOT}/core/providers/shl/*.cc"
+    "${ONNXRUNTIME_ROOT}/core/providers/shared/utils/utils.h"
+    "${ONNXRUNTIME_ROOT}/core/providers/shared/utils/utils.cc"
+  )
+
+  find_package(OpenMP REQUIRED)
+  source_group(TREE ${ONNXRUNTIME_ROOT}/core FILES ${onnxruntime_providers_shl_src})
+  onnxruntime_add_static_library(onnxruntime_providers_shl ${onnxruntime_providers_shl_src})
+  add_dependencies(onnxruntime_providers_shl ${onnxruntime_EXTERNAL_DEPENDENCIES})
+  onnxruntime_add_include_to_target(onnxruntime_providers_shl onnxruntime_common onnxruntime_framework onnx onnx_proto ${PROTOBUF_LIB} flatbuffers Boost::mp11)
+  target_link_libraries(onnxruntime_providers_shl PRIVATE onnx onnxruntime_common onnxruntime_framework)
+  target_include_directories(onnxruntime_providers_shl PRIVATE ${onnxruntime_SHL_HOME}/include)
+  target_link_libraries(onnxruntime_providers_shl PRIVATE -L${onnxruntime_SHL_HOME}/lib/ -lshl)
+  target_link_libraries(onnxruntime_providers_shl PRIVATE OpenMP::OpenMP_CXX)
+
+  set_target_properties(onnxruntime_providers_shl PROPERTIES FOLDER "ONNXRuntime")
+  set_target_properties(onnxruntime_providers_shl PROPERTIES LINKER_LANGUAGE CXX)
+
+  install(TARGETS onnxruntime_providers_shl
+          ARCHIVE   DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          LIBRARY   DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          RUNTIME   DESTINATION ${CMAKE_INSTALL_BINDIR}
+          FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+endif()
+
 
 if (onnxruntime_USE_AZURE)
 
