@@ -5,6 +5,7 @@
 
 #include "core/framework/execution_provider.h"
 #include "core/platform/ort_mutex.h"
+#include "onnx_converter.h"
 
 namespace onnxruntime {
 
@@ -22,7 +23,7 @@ class ShlExecutionProvider : public IExecutionProvider {
 
  private:
   std::vector<std::vector<int>> GetSupportedNodes(const onnxruntime::GraphViewer& graph_viewer) const;
-
+  csinn_profiler_enum profiler_level;
   std::unordered_map<std::string, std::string> config_;
 };
 

@@ -379,6 +379,9 @@ class InferenceSession(Session):
         else:
             self._fallback_providers = ["CPUExecutionProvider"]
 
+        if providers is None:
+            providers = ["ShlExecutionProvider"]
+
         # validate providers and provider_options before other initialization
         providers, provider_options = check_and_normalize_provider_args(
             providers, provider_options, available_providers
