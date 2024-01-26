@@ -97,7 +97,10 @@ function(AddTest)
     target_compile_options(${_UT_TARGET} PRIVATE ${DISABLED_WARNINGS_FOR_TVM})
     target_compile_options(${_UT_TARGET} PRIVATE "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Xcompiler -Wno-error=sign-compare>"
             "$<$<NOT:$<COMPILE_LANGUAGE:CUDA>>:-Wno-error=sign-compare>")
-    target_compile_options(${_UT_TARGET} PRIVATE "-Wno-error=uninitialized")
+    if (NOT CMAKE_SYSTEM_NAME MATCHES "Android|iOS")
+      target_compile_options(${_UT_TARGET} PRIVATE "-Wno-error=uninitialized")
+      target_compile_options(${_UT_TARGET} PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
+    endif()
   endif()
 
   set(TEST_ARGS ${_UT_TEST_ARGS})
@@ -508,6 +511,10 @@ if(onnxruntime_USE_ARMNN)
   list(APPEND onnxruntime_test_providers_dependencies onnxruntime_providers_armnn)
 endif()
 
+if(onnxruntime_USE_SHL)
+  list(APPEND onnxruntime_test_providers_dependencies onnxruntime_providers_shl)
+endif()
+
 if (onnxruntime_ENABLE_LANGUAGE_INTEROP_OPS)
   set(ONNXRUNTIME_INTEROP_TEST_LIBS PRIVATE onnxruntime_language_interop onnxruntime_pyop)
 endif()
@@ -527,6 +534,7 @@ set(ONNXRUNTIME_TEST_LIBS
     # ${PROVIDERS_TVM}
     ${PROVIDERS_XNNPACK}
     ${PROVIDERS_AZURE}
+    ${PROVIDERS_SHL}
     onnxruntime_optimizer
     onnxruntime_providers
     onnxruntime_util
@@ -767,7 +775,9 @@ if (MSVC)
 else()
   target_compile_options(onnxruntime_test_all PRIVATE "-Wno-parentheses")
 endif()
-
+if (NOT CMAKE_SYSTEM_NAME MATCHES "Android|iOS")
+  target_link_options(onnxruntime_test_all PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
+endif()
 if (MSVC AND onnxruntime_ENABLE_STATIC_ANALYSIS)
 # attention_op_test.cc: Function uses '49152' bytes of stack:  exceeds /analyze:stacksize '16384'..
 target_compile_options(onnxruntime_test_all PRIVATE  "/analyze:stacksize 131072")
@@ -936,6 +946,9 @@ if (onnxruntime_USE_TVM)
   endif()
 endif()
 
+if (NOT CMAKE_SYSTEM_NAME MATCHES "Android|iOS")
+  target_link_options(onnx_test_runner PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
+endif()
 install(TARGETS onnx_test_runner
         ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -1104,6 +1117,10 @@ if (NOT onnxruntime_ENABLE_TRAINING_TORCH_INTEROP)
     )
   endif()
 
+  if (NOT CMAKE_SYSTEM_NAME MATCHES "Android|iOS")
+    target_link_options(onnxruntime_perf_test PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
+  endif()
+
   if (onnxruntime_BUILD_SHARED_LIB)
     #It will dynamically link to onnxruntime. So please don't add onxruntime_graph/onxruntime_framework/... here.
     #onnxruntime_common is kind of ok because it is thin, tiny and totally stateless.
@@ -1183,7 +1200,9 @@ if (NOT onnxruntime_ENABLE_TRAINING_TORCH_INTEROP)
       )
       target_compile_definitions(onnxruntime_shared_lib_test PRIVATE USE_DUMMY_EXA_DEMANGLE=1)
     endif()
-
+    if (NOT CMAKE_SYSTEM_NAME MATCHES "Android|iOS")
+      target_link_options(onnxruntime_shared_lib_test PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
+    endif()
     if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
       add_custom_command(
         TARGET onnxruntime_shared_lib_test POST_BUILD
@@ -1200,6 +1219,7 @@ if (NOT onnxruntime_ENABLE_TRAINING_TORCH_INTEROP)
               LIBS ${onnxruntime_shared_lib_test_LIBS}
               DEPENDS ${all_dependencies}
       )
+      target_link_options(onnxruntime_global_thread_pools_test PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
     endif()
 
   # A separate test is needed to test the APIs that don't rely on the env being created first.
@@ -1210,6 +1230,7 @@ if (NOT onnxruntime_ENABLE_TRAINING_TORCH_INTEROP)
               LIBS ${onnxruntime_shared_lib_test_LIBS}
               DEPENDS ${all_dependencies}
       )
+      target_link_options(onnxruntime_api_tests_without_env PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
     endif()
   endif()
 
@@ -1431,6 +1452,9 @@ if (NOT onnxruntime_BUILD_WEBASSEMBLY)
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${TEST_DATA_SRC}
         $<TARGET_FILE_DIR:onnxruntime_customopregistration_test>/testdata)
+    endif()
+    if (NOT CMAKE_SYSTEM_NAME MATCHES "Android|iOS")
+      target_link_options(onnxruntime_customopregistration_test PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
     endif()
   endif()
 endif()

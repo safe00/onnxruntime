@@ -16,3 +16,4 @@ using ProviderOptionsVector = std::vector<ProviderOptions>;
 using ProviderOptionsMap = std::unordered_map<std::string, ProviderOptions>;
 
 }  // namespace onnxruntime
+

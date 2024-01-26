@@ -24,6 +24,7 @@
 #include "onnxruntime/core/providers/acl/acl_provider_factory.h"
 #include "onnxruntime/core/providers/armnn/armnn_provider_factory.h"
 #include "onnxruntime/core/providers/coreml/coreml_provider_factory.h"
+#include "onnxruntime/core/providers/shl/shl_provider_factory.h"
 #ifdef USE_DML
 #include "onnxruntime/core/providers/dml/dml_provider_factory.h"
 #endif
@@ -519,6 +520,24 @@ JNIEXPORT void JNICALL Java_ai_onnxruntime_OrtSession_00024SessionOptions_addTvm
   #else
     (void)apiHandle;(void)handle;(void)settingsString; // Parameters used when TVM is defined.
     throwOrtException(jniEnv,convertErrorCode(ORT_INVALID_ARGUMENT),"This binary was not compiled with TVM support.");
+  #endif
+}
+
+/*
+ * Class::    ai_onnxruntime_OrtSession_SessionOptions
+ * Method:    addShl
+ * Signature: (JILjava/lang/String)V
+ */
+JNIEXPORT void JNICALL Java_ai_onnxruntime_OrtSession_00024SessionOptions_addShl
+  (JNIEnv * jniEnv, jobject jobj, jlong apiHandle, jlong handle, jstring settingsString) {
+    (void)jobj;
+  #ifdef USE_SHL
+    const char* settings = (*jniEnv)->GetStringUTFChars(jniEnv, settingsString, NULL);
+    checkOrtStatus(jniEnv,(const OrtApi*)apiHandle, OrtSessionOptionsAppendExecutionProvider_Shl((OrtSessionOptions*) handle, settings));
+    (*jniEnv)->ReleaseStringUTFChars(jniEnv,settingsString,settings);
+  #else
+    (void)apiHandle;(void)handle;(void)settingsString; // Parameters used when SHL is defined.
+    throwOrtException(jniEnv,convertErrorCode(ORT_INVALID_ARGUMENT),"This binary was not compiled with SHL support.");
   #endif
 }
 

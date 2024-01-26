@@ -3877,6 +3877,18 @@ struct OrtApi {
   ORT_API2_STATUS(GetSessionConfigEntry, _In_ const OrtSessionOptions* options,
                   _In_z_ const char* config_key, _Out_ char* config_value, _Inout_ size_t* size);
 
+  /** \brief Append SHL provider to session options
+   *
+   * If SHL is not available (due to a non SHL enabled build, or if SHL is not installed on the system), this function will return failure.
+   *
+   * \param[in] options
+   * \param[in] opt_str
+   *
+   * \snippet{doc} snippets.dox OrtStatus Return Value
+   *
+   * \since Version 1.15.
+   */
+  ORT_API2_STATUS(OrtSessionOptionsAppendExecutionProvider_Shl, _In_ OrtSessionOptions* options, _In_ const char* opt_str);
   /// @}
 
 #ifdef __cplusplus

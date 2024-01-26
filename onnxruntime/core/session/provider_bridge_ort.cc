@@ -87,6 +87,9 @@ using IndexedSubGraph_MetaDef = IndexedSubGraph::MetaDef;
 #include "core/providers/cuda/cuda_provider_options.h"
 #include "core/providers/cann/cann_provider_options.h"
 
+#include "core/providers/shl/shl_ep_options.h"
+#include "core/providers/shl/shl_provider_factory_creator.h"
+
 // The filename extension for a shared library is different per platform
 #ifdef _WIN32
 #define LIBRARY_PREFIX
@@ -1813,6 +1816,22 @@ ORT_API_STATUS_IMPL(OrtApis::SessionOptionsAppendExecutionProvider_CANN,
   API_IMPL_END
 }
 
+ORT_API_STATUS_IMPL(OrtApis::OrtSessionOptionsAppendExecutionProvider_Shl, _In_ OrtSessionOptions* options, _In_ const char* opt_str) {
+  API_IMPL_BEGIN
+#ifdef USE_SHL
+  onnxruntime::ProviderOptions shl_options = onnxruntime::shl_ep::ShlEPOptionsHelper::FromOptionsString(opt_str);
+  auto factory = onnxruntime::ShlProviderFactoryCreator::Create(shl_options);
+  if (!factory) {
+    return OrtApis::CreateStatus(ORT_FAIL, "SessionOptionsAppendExecutionProvider_SHL: Failed to load shared library");
+  }
+
+  options->provider_factories.push_back(factory);
+  return nullptr;
+#else
+  return CreateStatus(ORT_FAIL, "SHL execution provider is not enabled in this build.");
+#endif
+  API_IMPL_END
+}
 ORT_API_STATUS_IMPL(OrtApis::CreateCANNProviderOptions, _Outptr_ OrtCANNProviderOptions** out) {
   API_IMPL_BEGIN
 #ifdef USE_CANN

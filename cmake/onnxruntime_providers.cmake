@@ -147,6 +147,9 @@ endif()
 if (onnxruntime_USE_CANN)
   set(PROVIDERS_CANN onnxruntime_providers_cann)
 endif()
+if (onnxruntime_USE_SHL)
+  set(PROVIDERS_SHL onnxruntime_providers_shl)
+endif()
 if (onnxruntime_USE_AZURE)
   set(PROVIDERS_AZURE onnxruntime_providers_azure)
 endif()
@@ -256,6 +259,7 @@ if (onnxruntime_BUILD_MS_EXPERIMENTAL_OPS)
   target_compile_definitions(onnxruntime_providers PRIVATE BUILD_MS_EXPERIMENTAL_OPS=1)
 endif()
 
+target_compile_options(onnxruntime_providers PRIVATE -Wno-error=array-bounds)
 if(HAS_DEPRECATED_COPY)
   #temporarily ignore this warning
   #see: https://en.wikipedia.org/wiki/Rule_of_three_(C%2B%2B_programming)
@@ -1609,6 +1613,38 @@ if (onnxruntime_USE_CANN)
           LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
           RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
+
+if (onnxruntime_USE_SHL)
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
+  file(GLOB_RECURSE onnxruntime_providers_shl_src CONFIGURE_DEPENDS
+    "${ONNXRUNTIME_ROOT}/core/providers/shl/*.h"
+    "${ONNXRUNTIME_ROOT}/core/providers/shl/*.cc"
+    "${ONNXRUNTIME_ROOT}/core/providers/shared/utils/utils.h"
+    "${ONNXRUNTIME_ROOT}/core/providers/shared/utils/utils.cc"
+  )
+
+  source_group(TREE ${ONNXRUNTIME_ROOT}/core FILES ${onnxruntime_providers_shl_src})
+  onnxruntime_add_static_library(onnxruntime_providers_shl ${onnxruntime_providers_shl_src})
+  add_dependencies(onnxruntime_providers_shl ${onnxruntime_EXTERNAL_DEPENDENCIES})
+  onnxruntime_add_include_to_target(onnxruntime_providers_shl onnxruntime_common onnxruntime_framework onnx onnx_proto ${PROTOBUF_LIB} flatbuffers Boost::mp11)
+  target_link_libraries(onnxruntime_providers_shl PRIVATE onnx onnxruntime_common onnxruntime_framework)
+  target_include_directories(onnxruntime_providers_shl PRIVATE ${onnxruntime_SHL_HOME}/include ${onnxruntime_SHL_HOME}/include/csinn)
+  target_link_libraries(onnxruntime_providers_shl PRIVATE -L${onnxruntime_SHL_HOME}/lib/ -lshl)
+  if (NOT CMAKE_SYSTEM_NAME MATCHES "Android|iOS")
+    target_compile_options(onnxruntime_providers_shl PRIVATE "-Wl,--unresolved-symbols=ignore-in-shared-libs")
+  endif()
+
+  set_target_properties(onnxruntime_providers_shl PROPERTIES FOLDER "ONNXRuntime")
+  set_target_properties(onnxruntime_providers_shl PROPERTIES LINKER_LANGUAGE CXX)
+
+  install(TARGETS onnxruntime_providers_shl
+          ARCHIVE   DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          LIBRARY   DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          RUNTIME   DESTINATION ${CMAKE_INSTALL_BINDIR}
+          FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+endif()
+
 
 if (onnxruntime_USE_AZURE)
 

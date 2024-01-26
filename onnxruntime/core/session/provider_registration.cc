@@ -84,10 +84,16 @@ ORT_API_STATUS_IMPL(OrtApis::SessionOptionsAppendExecutionProvider,
 #else
     status = create_not_supported_status();
 #endif
+  } else if (strcmp(provider_name, "SHL") == 0) {
+#if defined(USE_SHL)
+    options->provider_factories.push_back(ShlProviderFactoryCreator::Create(provider_options));
+#else
+    status = create_not_supported_status();
+#endif
   } else {
     ORT_UNUSED_PARAMETER(options);
     status = OrtApis::CreateStatus(ORT_INVALID_ARGUMENT,
-                                   "Unknown provider name. Currently supported values are 'SNPE', 'XNNPACK', and 'AZURE'");
+                                   "Unknown provider name. Currently supported values are 'SNPE', 'XNNPACK', 'AZURE', and 'SHL'");
   }
 
   return status;
@@ -277,6 +283,13 @@ ORT_API_STATUS_IMPL(OrtApis::SessionOptionsAppendExecutionProvider_CANN,
   ORT_UNUSED_PARAMETER(options);
   ORT_UNUSED_PARAMETER(provider_options);
   return CreateNotEnabledStatus("CANN");
+}
+
+ORT_API_STATUS_IMPL(OrtApis::OrtSessionOptionsAppendExecutionProvider_Shl,
+                  _In_ OrtSessionOptions* options, _In_ const char* provider_options) {
+  ORT_UNUSED_PARAMETER(options);
+  ORT_UNUSED_PARAMETER(provider_options);
+  return CreateNotEnabledStatus("SHL");
 }
 
 ORT_API_STATUS_IMPL(OrtApis::CreateCANNProviderOptions, _Outptr_ OrtCANNProviderOptions** out) {

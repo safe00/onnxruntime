@@ -62,6 +62,14 @@ namespace py = pybind11;
 using namespace onnxruntime;
 using namespace onnxruntime::logging;
 
+#if defined(RISCV_TH1520) || defined(RISCV_C920) || defined(RISCV_C906)
+#ifndef __x86_64__
+extern "C" {
+  void shl_mem_copy_f32(float *output, const float *input, uint32_t length);
+}
+#endif
+#endif
+
 #if defined(_MSC_VER) && !defined(__clang__)
 #pragma warning(push)
 // "Global initializer calls a non-constexpr function." Therefore you can't use ORT APIs in the other global initializers.
@@ -128,7 +136,15 @@ void GetPyObjFromTensor(const Tensor& rtensor, py::object& obj,
       }
 
     } else
+#if defined(RISCV_TH1520) || defined(RISCV_C920) || defined(RISCV_C906)
+      if (dtype == DataTypeImpl::GetType<float>()){
+        shl_mem_copy_f32(static_cast<float *>(out_ptr), static_cast<const float *>(rtensor.DataRaw(dtype)), shape.Size());
+      } else {
+        memcpy(out_ptr, rtensor.DataRaw(dtype), dtype->Size() * shape.Size());
+      }
+# else
       memcpy(out_ptr, rtensor.DataRaw(dtype), dtype->Size() * shape.Size());
+#endif
   } else {
     // Handle string type.
     // Copying strings to cpu from device is currently not supported
@@ -733,6 +749,14 @@ std::unique_ptr<IExecutionProvider> CreateExecutionProviderInstance(
   } else if (type == kAzureExecutionProvider) {
 #ifdef USE_AZURE
     return onnxruntime::AzureProviderFactoryCreator::Create({})->CreateProvider();
+#endif
+  } else if (type == kShlExecutionProvider) {
+#ifdef USE_SHL
+    const auto cit = provider_options_map.find(type);
+    if (cit != provider_options_map.end()){
+      return onnxruntime::ShlProviderFactoryCreator::Create(cit->second)->CreateProvider();
+    }
+    return onnxruntime::ShlProviderFactoryCreator::Create({})->CreateProvider();
 #endif
   } else {
     // check whether it is a dynamic load EP:

@@ -42,6 +42,7 @@ constexpr const char* kTvmExecutionProvider = "TvmExecutionProvider";
 constexpr const char* kXnnpackExecutionProvider = "XnnpackExecutionProvider";
 constexpr const char* kCannExecutionProvider = "CANNExecutionProvider";
 constexpr const char* kAzureExecutionProvider = "AzureExecutionProvider";
+constexpr const char* kShlExecutionProvider = "ShlExecutionProvider";
 
 constexpr const char* kExecutionProviderSharedLibraryPath = "shared_lib_path";
 constexpr const char* kExecutionProviderSharedLibraryEntry = "provider_factory_entry_point";

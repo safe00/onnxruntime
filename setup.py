@@ -82,6 +82,9 @@ elif parse_arg_remove_boolean(sys.argv, "--use_cann"):
     package_name = "onnxruntime-cann"
 elif parse_arg_remove_boolean(sys.argv, "--use_azure"):
     package_name = "onnxruntime-azure"
+elif parse_arg_remove_boolean(sys.argv, "--use_shl"):
+    shl_target = parse_arg_remove_string(sys.argv, "--shl_target")
+    package_name = f"hhb-onnxruntime-{shl_target.lower()}"
 
 # PEP 513 defined manylinux1_x86_64 and manylinux1_i686
 # PEP 571 defined manylinux2010_x86_64 and manylinux2010_i686

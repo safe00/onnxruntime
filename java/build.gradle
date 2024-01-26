@@ -3,7 +3,7 @@ plugins {
 	id 'maven-publish'
 	id 'signing'
 	id 'jacoco'
-	id 'com.diffplug.spotless' version '5.17.0'
+	// id 'com.diffplug.spotless' version '5.17.0'
 }
 
 allprojects {
@@ -64,20 +64,20 @@ wrapper {
 	gradleVersion = '6.1.1'
 }
 
-spotless {
-	java {
-		removeUnusedImports()
-		googleJavaFormat()
-	}
-	format 'gradle', {
-		target '**/*.gradle'
-		trimTrailingWhitespace()
-		indentWithTabs()
-	}
-}
+// spotless {
+// 	java {
+// 		removeUnusedImports()
+// 		googleJavaFormat()
+// 	}
+// 	format 'gradle', {
+// 		target '**/*.gradle'
+// 		trimTrailingWhitespace()
+// 		indentWithTabs()
+// 	}
+// }
 
 compileJava {
-	dependsOn spotlessJava
+	// dependsOn spotlessJava
 	options.compilerArgs += ["-h", "${project.buildDir}/headers/"]
 	if (!JavaVersion.current().isJava8()) {
 		// Ensures only methods present in Java 8 are used
@@ -165,7 +165,7 @@ processTestResources {
 
 test {
 	java {
-		dependsOn spotlessJava
+		// dependsOn spotlessJava
 	}
 	if (System.getProperty("JAVA_FULL_TEST") != null) {
 		// Forces each test class to be run in a separate JVM,

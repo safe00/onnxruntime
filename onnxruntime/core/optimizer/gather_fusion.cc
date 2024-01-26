@@ -145,7 +145,12 @@ Status GatherToSplitFusion::ApplyImpl(Graph& graph, bool& modified, int graph_le
     Node& split_node = graph.AddNode(graph.GenerateNodeName("Split"), "Split", "Split for Fused Gather nodes",
                                      {node.MutableOutputDefs()[0]}, add_squeeze_node ? split_outputs : gather_outputs);
     split_node.AddAttribute("axis", split_axis);
-    split_node.SetExecutionProviderType(node.GetExecutionProviderType());
+
+    auto ep = node.GetExecutionProviderType();
+    if (ep == "ShlExecutionProvider") {
+      ep = "CPUExecutionProvider";
+    }
+    split_node.SetExecutionProviderType(ep);
 
     // Squeeze-11, Squeee-13, Split-13, Split-18 have different schemas.
     int onnx_opset_version = -1;
@@ -159,7 +164,7 @@ Status GatherToSplitFusion::ApplyImpl(Graph& graph, bool& modified, int graph_le
           Node& squeeze_node = graph.AddNode(graph.GenerateNodeName("Squeeze" + std::to_string(i)), "Squeeze",
                                             "Squeeze for Fused Gather nodes", {split_outputs[i]}, {gather_outputs[i]});
           squeeze_node.AddAttribute("axes", std::vector<int64_t>{split_axis});
-          squeeze_node.SetExecutionProviderType(node.GetExecutionProviderType());
+          squeeze_node.SetExecutionProviderType(ep);
         }
       }
     } else {
@@ -180,7 +185,7 @@ Status GatherToSplitFusion::ApplyImpl(Graph& graph, bool& modified, int graph_le
           Node& squeeze_node =
               graph.AddNode(graph.GenerateNodeName("Squeeze" + std::to_string(i)), "Squeeze",
                             "Squeeze for Fused Gather nodes", {split_outputs[i], axes_arg}, {gather_outputs[i]});
-          squeeze_node.SetExecutionProviderType(node.GetExecutionProviderType());
+          squeeze_node.SetExecutionProviderType(ep);
         }
       }
     }

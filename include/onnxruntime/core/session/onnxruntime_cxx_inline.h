@@ -733,6 +733,12 @@ inline SessionOptionsImpl<T>& SessionOptionsImpl<T>::AppendExecutionProvider_CAN
 }
 
 template <typename T>
+inline SessionOptionsImpl<T>& SessionOptionsImpl<T>::AppendExecutionProvider_SHL(const std::unordered_map<std::string, std::string>& provider_options) {
+  ThrowOnError(GetApi().OrtSessionOptionsAppendExecutionProvider_Shl(this->p_, &provider_options));
+  return *this;
+}
+
+template <typename T>
 inline SessionOptionsImpl<T>& SessionOptionsImpl<T>::AppendExecutionProvider(
     const std::string& provider_name,
     const std::unordered_map<std::string, std::string>& provider_options) {

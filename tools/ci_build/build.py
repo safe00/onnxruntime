@@ -332,7 +332,7 @@ def parse_arguments():
     parser.add_argument(
         "--android_abi",
         default="arm64-v8a",
-        choices=["armeabi-v7a", "arm64-v8a", "x86", "x86_64"],
+        choices=["armeabi-v7a", "arm64-v8a", "x86", "x86_64", "riscv64"],
         help="Specify the target Android Application Binary Interface (ABI)",
     )
     parser.add_argument("--android_api", type=int, default=27, help="Android API Level, e.g. 21")
@@ -670,6 +670,10 @@ def parse_arguments():
     parser.add_argument("--use_cann", action="store_true", help="Build with CANN")
     parser.add_argument("--cann_home", help="Path to CANN installation dir")
 
+    parser.add_argument("--use_shl", action="store_true", help="Build with SHL")
+    parser.add_argument("--shl_home", help="Path to SHL installation dir")
+    parser.add_argument("--shl_target", help="build for target board.")
+
     parser.add_argument(
         "--enable_rocm_profiling",
         action="store_true",
@@ -852,6 +856,7 @@ def generate_build_tree(
     armnn_libs,
     snpe_root,
     cann_home,
+    shl_home,
     path_to_protoc_exe,
     configs,
     cmake_extra_defines,
@@ -964,6 +969,7 @@ def generate_build_tree(
         "-Donnxruntime_ENABLE_ROCM_PROFILING=" + ("ON" if args.enable_rocm_profiling else "OFF"),
         "-Donnxruntime_USE_XNNPACK=" + ("ON" if args.use_xnnpack else "OFF"),
         "-Donnxruntime_USE_CANN=" + ("ON" if args.use_cann else "OFF"),
+        "-Donnxruntime_USE_SHL=" + ("ON" if args.use_shl else "OFF"),
     ]
     if args.use_cache:
         cmake_args.append("-Donnxruntime_BUILD_CACHE=ON")
@@ -1049,6 +1055,13 @@ def generate_build_tree(
 
     if cann_home and os.path.exists(cann_home):
         cmake_args += ["-Donnxruntime_CANN_HOME=" + cann_home]
+
+    if shl_home and os.path.exists(shl_home):
+        cmake_args += ["-Donnxruntime_SHL_HOME=" + shl_home]
+        shl_target = "REF_X86"
+        if args.shl_target:
+            shl_target = args.shl_target
+        cmake_args += ["-Donnxruntime_SHL_TARGET=" + shl_target]
 
     if args.winml_root_namespace_override:
         cmake_args += ["-Donnxruntime_WINML_NAMESPACE_OVERRIDE=" + args.winml_root_namespace_override]
@@ -1469,7 +1482,6 @@ def setup_tensorrt_vars(args):
 
 
 def setup_migraphx_vars(args):
-
     migraphx_home = None
 
     if args.use_migraphx:
@@ -1925,6 +1937,8 @@ def build_python_wheel(
     use_dml,
     use_cann,
     use_azure,
+    use_shl,
+    shl_target,
     wheel_name_suffix,
     enable_training,
     nightly_build=False,
@@ -1985,6 +1999,9 @@ def build_python_wheel(
             args.append("--use_cann")
         elif use_azure:
             args.append("--use_azure")
+        elif use_shl:
+            args.append("--use_shl")
+            args.append("--shl_target={}".format(shl_target))
 
         run_subprocess(args, cwd=cwd)
 
@@ -2403,6 +2420,8 @@ def main():
     armnn_home = args.armnn_home
     armnn_libs = args.armnn_libs
 
+    shl_home = args.shl_home
+
     # if using tensorrt, setup tensorrt paths
     tensorrt_home = setup_tensorrt_vars(args)
 
@@ -2614,6 +2633,7 @@ def main():
             armnn_libs,
             snpe_root,
             cann_home,
+            shl_home,
             path_to_protoc_exe,
             configs,
             cmake_extra_defines,
@@ -2677,6 +2697,8 @@ def main():
                 args.use_dml,
                 args.use_cann,
                 args.use_azure,
+                args.use_shl,
+                args.shl_target,
                 args.wheel_name_suffix,
                 args.enable_training,
                 nightly_build=nightly_build,

@@ -390,6 +390,8 @@ ORT_API(void, ReleaseKernelInfo, _Frees_ptr_opt_ OrtKernelInfo* info_copy);
 
 ORT_API(const OrtTrainingApi*, GetTrainingApi, uint32_t version);
 
+ORT_API_STATUS_IMPL(OrtSessionOptionsAppendExecutionProvider_Shl, _In_ OrtSessionOptions* options, _In_ const char* opt_str);
+
 ORT_API_STATUS_IMPL(SessionOptionsAppendExecutionProvider_CANN,
                     _In_ OrtSessionOptions* options, _In_ const OrtCANNProviderOptions* cann_options);
 ORT_API_STATUS_IMPL(CreateCANNProviderOptions, _Outptr_ OrtCANNProviderOptions** out);
@@ -431,4 +433,3 @@ ORT_API_STATUS_IMPL(HasSessionConfigEntry, _In_ const OrtSessionOptions* options
 ORT_API_STATUS_IMPL(GetSessionConfigEntry, _In_ const OrtSessionOptions* options,
                     _In_z_ const char* config_key, _Out_ char* config_value, _Inout_ size_t* size);
 }  // namespace OrtApis
-

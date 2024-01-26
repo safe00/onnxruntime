@@ -173,6 +173,11 @@ endif()
 # Guarantee that the Eigen code that you are #including is licensed
 # under the MPL2 and possibly more permissive licenses (like BSD).
 add_definitions(-DEIGEN_MPL2_ONLY)
+
+if (NOT CMAKE_SYSTEM_NAME MATCHES "Android|iOS")
+  add_definitions(-Wno-error=stringop-overflow)
+endif()
+
 if (MSVC)
   add_definitions(-DEIGEN_HAS_CONSTEXPR -DEIGEN_HAS_VARIADIC_TEMPLATES -DEIGEN_HAS_CXX11_MATH -DEIGEN_HAS_CXX11_ATOMIC
           -DEIGEN_STRONG_INLINE=inline)
