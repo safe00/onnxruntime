@@ -510,14 +510,39 @@ void OnnxToShlConverter::Flatten(const onnxruntime::Node& node) {
   auto params = shl_ep::GetShlParams<csinn_flatten_params>(session_, node);
 
   params->base.name = const_cast<char*>(node.Name().c_str());
+  params->axis = helper.Get("axis", 1);
 
   std::string input = node.InputDefs()[0]->Name();
   auto input_tensor = shl_tensor_map.at(input);
+  if (params->axis < 0) {
+    params->axis += input_tensor->dim_count;
+  }
   std::string output = node.OutputDefs()[0]->Name();
   auto output_tensor = shl_tensor_map.at(output);
   CheckQuantDtype<csinn_tensor>(input_tensor, output_tensor);
   csinn_flatten_init(input_tensor, output_tensor, params);
   csinn_flatten(input_tensor, output_tensor, params);
+}
+
+void OnnxToShlConverter::Gather(const onnxruntime::Node& node) {
+  NodeAttrHelper helper(node);
+  auto params = shl_ep::GetShlParams<csinn_gather_params>(session_, node);
+
+  params->base.name = const_cast<char*>(node.Name().c_str());
+  params->axis = helper.Get("axis", 0);
+
+  std::string input = node.InputDefs()[0]->Name();
+  auto input_tensor = shl_tensor_map.at(input);
+  std::string indices = node.InputDefs()[1]->Name();
+  auto indices_tensor = shl_tensor_map.at(indices);
+  if (params->axis < 0) {
+    params->axis += input_tensor->dim_count;
+  }
+  std::string output = node.OutputDefs()[0]->Name();
+  auto output_tensor = shl_tensor_map.at(output);
+  CheckQuantDtype<csinn_tensor>(input_tensor, indices_tensor, output_tensor);
+  csinn_gather_init(input_tensor, indices_tensor, output_tensor, params);
+  csinn_gather(input_tensor, indices_tensor, output_tensor, params);
 }
 
 void OnnxToShlConverter::Sigmoid(const onnxruntime::Node& node) {

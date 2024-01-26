@@ -1,4 +1,4 @@
-// Copyright (C) 2016-2023 T-Head Semiconductor Co., Ltd. All rights reserved.
+// Copyright (C) 2016-2023 T-Head Semiconductor Co., Ltd. All rights 31reserved.
 // Licensed under the MIT License.
 
 #include "shl_common.h"
@@ -26,12 +26,14 @@ csinn_dtype_enum GetShlDtypeEnum(const ONNX_NAMESPACE::TypeProto_Tensor type) {
         return CSINN_DTYPE_INT64;
       case ONNX_NAMESPACE::TensorProto_DataType_BOOL:
         return CSINN_DTYPE_BOOL;
+      case ONNX_NAMESPACE::TensorProto_DataType_DOUBLE:
+        return CSINN_DTYPE_FLOAT64;
       default:
         // TODO: support other type
-        throw std::invalid_argument("The input of graph doesn't have valid type");
+        throw std::invalid_argument("SHL unspport this  'TypeProto_Tensor' type.");
     }
   }
-  throw std::invalid_argument("The input of graph doesn't have valid type");
+  throw std::invalid_argument("SHL unspport this 'TypeProto_Tensor' type.");
   return CSINN_DTYPE_FLOAT32;
 }
 
@@ -51,11 +53,13 @@ csinn_dtype_enum GetShlDtypeEnum(enum ONNXTensorElementDataType type) {
       return CSINN_DTYPE_INT64;
     case ONNX_TENSOR_ELEMENT_DATA_TYPE_BOOL:
       return CSINN_DTYPE_BOOL;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_DOUBLE:
+      return CSINN_DTYPE_FLOAT64;
     default:
       // TODO: support other type
-      throw std::invalid_argument("The input of graph doesn't have valid type");
+      throw std::invalid_argument("SHL unspport this 'ONNXTensorElementDataType' type.");
   }
-  throw std::invalid_argument("The input of graph doesn't have valid type");
+  throw std::invalid_argument("SHL unspport this 'ONNXTensorElementDataType' type.");
   return CSINN_DTYPE_FLOAT32;
 }
 
@@ -93,7 +97,7 @@ csinn_layout_enum GetShlWeightLayoutEnum(int dim_count) {
     default:
       return CSINN_LAYOUT_OIHW;
   }
-  throw std::invalid_argument("The input of graph doesn't have valid type");
+  throw std::invalid_argument("Weight doesn't have valid layout");
   return CSINN_LAYOUT_OIHW;
 }
 
@@ -103,7 +107,7 @@ csinn_quant_enum GetShlQDtypeEnum(std::string type) {
   else if (type == "CSINN_QUANT_FLOAT16")
     return CSINN_QUANT_FLOAT16;
 
-  throw std::invalid_argument("The input of graph doesn't have valid type");
+  throw std::invalid_argument("DQ only support float32 and float 16.");
   return CSINN_QUANT_FLOAT32;
 }
 
@@ -264,6 +268,24 @@ std::pair<bool, std::string> IsNodeSupported(const GraphViewer& graph_viewer, co
     if (node->InputDefs().size() != 1) {
       return {false, "Argmax in maxpooling is not supported"};
     }
+  } else if (op == "Add") {
+    const NodeArg* r_node = node->InputDefs()[0];
+    const NodeArg* l_node = node->InputDefs()[1];
+    auto r_dtype = r_node->TypeAsProto()->tensor_type();
+    auto l_dtype = l_node->TypeAsProto()->tensor_type();
+
+    if (r_dtype.has_elem_type()) {
+      auto r_dtype_elem = r_dtype.elem_type();
+      if (r_dtype_elem == ONNX_NAMESPACE::TensorProto_DataType_DOUBLE) {
+        return {false, "Add not support float64."};
+      }
+    }
+    if (l_dtype.has_elem_type()) {
+      auto l_dtype_elem = l_dtype.elem_type();
+      if (l_dtype_elem == ONNX_NAMESPACE::TensorProto_DataType_DOUBLE) {
+        return {false, "Add not support float64."};
+      }
+    }
   } else if (op == "GlobalAveragePool" || op == "GlobalMaxPool") {
     const NodeArg* input = node->InputDefs()[0];
     auto in_shape = input->Shape();
@@ -291,7 +313,7 @@ std::pair<bool, std::string> IsNodeSupported(const GraphViewer& graph_viewer, co
     }
 
     auto in_shape = input->Shape();
-    if (in_shape->dim_size() != 4) {
+    if (in_shape == nullptr || in_shape->dim_size() != 4) {
       return {false, "Resize only supports 4 dims."};
     }
 

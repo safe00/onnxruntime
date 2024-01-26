@@ -37,8 +37,7 @@ namespace shl_ep {
 class OnnxToShlConverter {
  public:
   OnnxToShlConverter(csinn_session* session, const std::unordered_map<std::string, std::string> config)
-      : session_(session)
-  {
+      : session_(session) {
     session_->debug_level = CSINN_DEBUG_LEVEL_ERROR;
     session_->profiler_level = CSINN_PROFILER_LEVEL_UNSET;
 
@@ -58,7 +57,7 @@ class OnnxToShlConverter {
     if (config.count("base_api")) {
       session_->base_api = GetShlAPIEnum(config.at("base_api"));
     }
-    if (session_->base_api == CSINN_TH1520){
+    if (session_->base_api == CSINN_TH1520) {
       session_->base_run_mode = CSINN_RM_NPU_GRAPH;
     }
 
@@ -92,6 +91,7 @@ class OnnxToShlConverter {
   void Conv2D(const onnxruntime::Node& node);
   void Conv3D(const onnxruntime::Node& node){};
   void Flatten(const onnxruntime::Node& node);
+  void Gather(const onnxruntime::Node& node);
   void Gemm(const onnxruntime::Node& node);
   void GlobalAvgPool(const onnxruntime::Node& node);
   void MaxPool(const onnxruntime::Node& node);
@@ -118,39 +118,36 @@ class OnnxToShlConverter {
   void FuseDQDNodes(std::unordered_map<std::string, const Node*> fuse_nodes);
   void FuseDQDTensor(const GraphViewer& graph_viewer);
 
-  template<typename... Args>
+  template <typename... Args>
   void CheckQuantDtype(const csinn_tensor* first, const Args*... args) {
-    if (session_->base_api != CSINN_TH1520){
+    if (session_->base_api != CSINN_TH1520) {
       return;
     }
 
     bool result = ((first->dtype == args->dtype) && ...);
-    if (!result){
+    if (!result) {
       throw std::invalid_argument("When use th1520 backend, all input dtype must be same as output dtype. model can be convert by HHB tools");
     }
 
     return;
   }
   void CheckQuantDtype(const csinn_tensor* first, csinn_tensor** inputs, int num) {
-    if (session_->base_api != CSINN_TH1520){
+    if (session_->base_api != CSINN_TH1520) {
       return;
     }
-    for (int i=0; i<num; i++){
-      if (first->dtype != inputs[i]->dtype){
+    for (int i = 0; i < num; i++) {
+      if (first->dtype != inputs[i]->dtype) {
         throw std::invalid_argument("When use th1520 backend, all input dtype must be same as output dtype. model can be convert by HHB tools");
       }
     }
     return;
   }
 
-
-
   void SetPoolAttr(csinn_pool_params* params, const onnxruntime::Node& node);
   csinn_quant_info* GetQuantInfo(const Node* node);
   void ProcessQNodes(const Node* node);
   void ProcessDQNodes(const Node* node);
-  void ProcessDQDNodes(const Node* q_node , const Node* dq_node);
-
+  void ProcessDQDNodes(const Node* q_node, const Node* dq_node);
 
   static inline std::unordered_map<std::string, OperationFunc> shl_ops_map = {
       {"Add", &OnnxToShlConverter::Add},
@@ -158,6 +155,7 @@ class OnnxToShlConverter {
       {"Concat", &OnnxToShlConverter::Concat},
       {"Conv", &OnnxToShlConverter::Conv},
       {"Flatten", &OnnxToShlConverter::Flatten},
+      {"Gather", &OnnxToShlConverter::Gather},
       {"Gemm", &OnnxToShlConverter::Gemm},
       {"GlobalAveragePool", &OnnxToShlConverter::GlobalAvgPool},
       {"MaxPool", &OnnxToShlConverter::MaxPool},
@@ -182,8 +180,7 @@ class OnnxToShlConverter {
   };
   static inline std::unordered_map<std::string, FuseFunc> ops_fuse_map = {
       {"LayerNorm", &OnnxToShlConverter::FuseLayerNormalization},
-      {"QDQFusion", &OnnxToShlConverter::FuseDQDNodes}
-      };
+      {"QDQFusion", &OnnxToShlConverter::FuseDQDNodes}};
 
   std::pair<FuseFunc, std::unordered_map<std::string, const Node*>> GetFusionFunc(const onnxruntime::Node& node, bool& clear) {
     static std::unordered_map<const Node*, std::unordered_map<std::string, const Node*>> all_fusible_func;

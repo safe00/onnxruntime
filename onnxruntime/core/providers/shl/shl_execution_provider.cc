@@ -428,7 +428,7 @@ Status ShlExecutionProvider::Compile(const std::vector<FusedNodeAndGraph>& fused
         start_time = shl_get_timespec();
         csinn_session_run(current_sess);
         end_time = shl_get_timespec();
-        printf("Run graph execution time: %.5fms, FPS=%.2f\n", ((float)(end_time - start_time)) / 1000000,
+        printf("csinn_session_run execution time: %.5fms, FPS=%.2f\n", ((float)(end_time - start_time)) / 1000000,
                1000000000.0 / ((float)(end_time - start_time)));
       } else {
         csinn_session_run(current_sess);
